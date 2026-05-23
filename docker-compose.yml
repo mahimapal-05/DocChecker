@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doc-intel-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/uploads:/app/data/uploads
+      - ./data/chroma_db:/app/data/chroma_db
+      - ./.env:/app/.env:ro
+    environment:
+      # Point to Ollama running on the host machine
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - CHROMA_PATH=/app/data/chroma_db
+      - UPLOAD_DIR=/app/data/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Linux support
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# Note: Ollama runs on your HOST machine (not in Docker) for GPU access.
+# If you want Ollama in Docker too (CPU only), add:
+#
+#   ollama:
+#     image: ollama/ollama:latest
+#     ports:
+#       - "11434:11434"
+#     volumes:
+#       - ollama_data:/root/.ollama
+#
+# volumes:
+#   ollama_data:
